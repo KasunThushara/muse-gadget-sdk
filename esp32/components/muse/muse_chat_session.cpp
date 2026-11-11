@@ -130,7 +130,11 @@ static_assert(MP3_BUF > MP3_POLL_ROOM + MP3_HOLD, "reads would stall with the MP
 #define TEXT_CHARS_PER_S 16                /* speaker off: reading pace, a little over speech */
 #define TEXT_HOLD_S 2                      /* speaker off: how long a message's last lines stay up */
 
-#define PING_US (20 * 1000000LL)
+/* The VM closes an idle chat WebSocket after about 10 s (seen as a steady
+ * 9.5 s from subscribe to "server closed"). Ping well inside that window or
+ * the socket is already dead when a turn arrives, and the turn's first write
+ * stalls until the I/O timeout. */
+#define PING_US (5 * 1000000LL)
 #define DEAD_US (60 * 1000000LL)           /* nothing from the server, pongs included */
 #define IDLE_CLOSE_US (10 * 60 * 1000000LL)
 #define AUTO_RETRY_MIN_US (5 * 1000000LL)  /* connecting without a turn, after a failure */
@@ -654,8 +658,12 @@ static bool flush_outbound(conn_t *c)
     while (c->session->HasOutboundWebSocketPayload()) {
         auto r = c->session->WriteNextOutboundWebSocketPayload(
             ByteSpan(c->ws, ClientSession::kMaxOutboundWebSocketPayloadSize));
-        if (!r.ok() || !ws_send_binary(c->tls, c->ws, r.size())) {
-            ESP_LOGE(TAG, "send failed");
+        if (!r.ok()) {
+            ESP_LOGE(TAG, "send prepare failed: %s", r.status().str());
+            return false;
+        }
+        if (!ws_send_binary(c->tls, c->ws, r.size())) {
+            ESP_LOGE(TAG, "send failed (%u bytes)", (unsigned)r.size());
             return false;
         }
     }
@@ -867,12 +875,19 @@ static bool connect_once(char *err, size_t err_cap, int *http_status)
     esp_tls_cfg_t cfg = {};
     cfg.crt_bundle_attach = esp_crt_bundle_attach;
     cfg.timeout_ms = 15000;
+    /* The hotspot's DNS often answers with IPv6 first, which this build
+     * cannot route: the station gets an IPv4 address only. Pin the chat
+     * connection to IPv4, as the TTS client below does, or every turn spends
+     * seconds on an unreachable AAAA before falling back. */
+    cfg.addr_family = ESP_TLS_AF_INET;
     int64_t t0 = now_us();
     if (esp_tls_conn_new_sync(s_host, strlen(s_host), NOISE_PORT, &cfg, c.tls) != 1) {
         snprintf(err, err_cap, "Can't reach %s", s_host);
         return false;
     }
+    int64_t t_tls = now_us();
     int status = ws_upgrade(c.tls, s_vm.vm_id, s_vm.vm_token);
+    int64_t t_upgrade = now_us();
     *http_status = status;
     if (status != 101) {
         ESP_LOGW(TAG, "upgrade rejected: HTTP %d", status);
@@ -901,6 +916,7 @@ static bool connect_once(char *err, size_t err_cap, int *http_status)
         strlcpy(err, "Noise handshake failed", err_cap);
         return false;
     }
+    int64_t t_noise = now_us();
     int fd = -1;
     if (esp_tls_get_conn_sockfd(c.tls, &fd) != ESP_OK || fd < 0) {
         strlcpy(err, "Socket error", err_cap);
@@ -914,7 +930,10 @@ static bool connect_once(char *err, size_t err_cap, int *http_status)
         strlcpy(err, "Subscribe failed", err_cap);
         return false;
     }
-    ESP_LOGI(TAG, "connected to VM %s in %d ms", s_vm.vm_id, (int)((now_us() - t0) / 1000));
+    ESP_LOGI(TAG, "connected to VM %s in %d ms (tls %d, upgrade %d, noise %d, subscribe %d)",
+             s_vm.vm_id, (int)((now_us() - t0) / 1000), (int)((t_tls - t0) / 1000),
+             (int)((t_upgrade - t_tls) / 1000), (int)((t_noise - t_upgrade) / 1000),
+             (int)((now_us() - t_noise) / 1000));
     return true;
 }
 

@@ -269,9 +269,22 @@ xvf_host VERSION
 - **Mute / reset:** the XVF3800's own Mute and Reset buttons remain hardware
   controls.
 
-### Optional external button (Grove Button)
+### Talk button (XIAO BOOT)
 
-The user's wiring: **VCC → D3, SIG → D0, GND → GND**.
+The talk button is the XIAO's own **BOOT** button on **GPIO0**. It is active low
+with the internal pull-up, so no external module is needed:
+
+```ini
+CONFIG_HOMEHUB_BUTTON_GPIO=0
+CONFIG_HOMEHUB_BUTTON_LABEL="BOOT"
+```
+
+Hold it to record a voice note; a tap starts a live call.
+
+#### Optional external button (Grove Button, not fitted)
+
+The Grove Button is no longer fitted, so these settings are commented out in
+the overlay. If it is wired back in, use **VCC → D3, SIG → D0, GND → GND**:
 
 | Grove Button | XIAO | GPIO |
 |---|---|---|
@@ -279,8 +292,6 @@ The user's wiring: **VCC → D3, SIG → D0, GND → GND**.
 | VCC | **D3** | 4 (driven high) |
 | SIG | **D0** | 1 (input, active high) |
 | NC | — | — |
-
-Firmware settings (already in the overlay):
 
 ```ini
 CONFIG_HOMEHUB_BUTTON_GPIO=1
@@ -382,7 +393,7 @@ idf.py -B build-seeed-respeaker-xvf3800 \
 
 1. Muse app → **Settings → Devices → Developer mode ON**.
 2. **Add Device (+)** → `MuseGadget-respeaker-XXXXXX`.
-3. **Press** the button (or the Grove Button) to confirm.
+3. **Press** the BOOT button to confirm.
 4. Choose the **2.4 GHz** Wi-Fi; enter the password.
 5. Wait for the **green ring**.
 6. **Hold** the button, speak, release:
@@ -408,7 +419,7 @@ idf.py -B build-seeed-respeaker-xvf3800 \
 | Groq `sock < 0` | The hotspot/network cannot reach `api.groq.com`; use AssemblyAI or a local TTS proxy |
 | No pairing | Developer mode; 2.4 GHz; valid SDK token; press the button |
 | Ring not green | Wi-Fi/internet; app provisioning; log `setup=done wifi=up ws=up` |
-| Button not detected | Grove: VCC→D3/GPIO4, SIG→D0/GPIO1, GND→GND; active-high config |
+| Button not detected | Default is XIAO BOOT on GPIO0, active low. If a Grove Button is wired: VCC→D3/GPIO4, SIG→D0/GPIO1, GND→GND; uncomment the active-high config |
 | Mic silent | Try the other I2S slot (`s_raw[2*i+1]`) in `voice_board_xvf3800.c` |
 
 Useful log lines:

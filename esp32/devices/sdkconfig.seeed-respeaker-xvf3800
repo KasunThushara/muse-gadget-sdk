@@ -23,13 +23,22 @@
 # The 12-LED WS2812 ring is driven by the XVF3800 over I2C, not by a XIAO GPIO.
 CONFIG_IDF_TARGET="esp32s3"
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+# The uplink to Muse blackholes full-size segments: the TLS handshake takes
+# seconds and an 8 KB chat frame stalls, while small control frames pass.
+# 1200 bytes is safe behind PPPoE, VPNs and the tunnel's 1280-byte MTU.
+CONFIG_LWIP_TCP_MSS=1200
 CONFIG_HOMEHUB_LED_BACKEND_XVF3800=y
 CONFIG_HOMEHUB_VOICE=y
 CONFIG_HOMEHUB_BLE_NAME_SUFFIX="-respeaker"
-CONFIG_HOMEHUB_BUTTON_GPIO=1
-CONFIG_HOMEHUB_BUTTON_ACTIVE_HIGH=y
-CONFIG_HOMEHUB_BUTTON_POWER_GPIO=4
-CONFIG_HOMEHUB_BUTTON_LABEL="TALK"
+# Talk button: the XIAO's own BOOT button on GPIO0, active low with the
+# internal pull-up. Hold it to record a voice note; a tap starts a live call.
+CONFIG_HOMEHUB_BUTTON_GPIO=0
+CONFIG_HOMEHUB_BUTTON_LABEL="BOOT"
+# Grove Button (not fitted: the module went to a customer). It was SIG on
+# GPIO1, active high, powered from GPIO4. Uncomment these and comment out the
+# two lines above if the module is wired back in.
+# CONFIG_HOMEHUB_BUTTON_ACTIVE_HIGH=y
+# CONFIG_HOMEHUB_BUTTON_POWER_GPIO=4
 CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
 CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
 CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
