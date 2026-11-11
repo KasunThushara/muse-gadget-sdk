@@ -12,23 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Seeed reSpeaker XVF3800 with XIAO ESP32-S3: 8 MB flash, 8 MB octal PSRAM.
-# Load after sdkconfig.defaults. Requires the XVF3800's 16 kHz I2S-slave
-# firmware; the ESP32-S3 is the I2S master.
-# Pin sources: https://wiki.seeedstudio.com/respeaker_xvf3800_xiao_getting_started/
-# and https://wiki.seeedstudio.com/respeaker_xvf3800_xiao_record_playback/
-# I2S: BCLK=GPIO8, WS=GPIO7, DOUT=GPIO44, DIN=GPIO43.
-# I2C: SDA=GPIO5, SCL=GPIO6, XVF3800 at 0x2C.
-# The XIAO BOOT button is GPIO0. USB serial: Espressif 303a:1001.
-# The 12-LED WS2812 ring is driven by the XVF3800 over I2C, not by a XIAO GPIO.
+# Seeed reSpeaker XVF3800 with pre-soldered XIAO ESP32-S3, 8 MB flash and
+# 8 MB octal PSRAM. Load after sdkconfig.defaults. Experimental Link-only voice.
+# Requires respeaker_xvf3800_i2s_slave_v1.0.9_16k.bin or a compatible newer
+# same-major 16 kHz I2S-slave image with stock output routing.
+# Sources: https://github.com/respeaker/reSpeaker_XVF3800_USB_4MIC_ARRAY
+# and https://wiki.seeedstudio.com/respeaker_xvf3800_xiao_i2s/
+# XIAO BOOT=GPIO0, SDA=GPIO5, SCL=GPIO6, WS=GPIO7, BCLK=GPIO8,
+# ESP32 DOUT=GPIO44, DIN=GPIO43. USB serial: Espressif 303a:1001.
 CONFIG_IDF_TARGET="esp32s3"
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
 # The uplink to Muse blackholes full-size segments: the TLS handshake takes
 # seconds and an 8 KB chat frame stalls, while small control frames pass.
 # 1200 bytes is safe behind PPPoE, VPNs and the tunnel's 1280-byte MTU.
 CONFIG_LWIP_TCP_MSS=1200
+# The XVF3800 drives its own 12-LED WS2812 ring over I2C; this backend sends
+# it effects and colours. The voice board below picks our XVF3800 driver.
 CONFIG_HOMEHUB_LED_BACKEND_XVF3800=y
 CONFIG_HOMEHUB_VOICE=y
+CONFIG_HOMEHUB_VOICE_BOARD_RESPEAKER_XVF3800=y
 CONFIG_HOMEHUB_BLE_NAME_SUFFIX="-respeaker"
 # Talk button: the XIAO's own BOOT button on GPIO0, active low with the
 # internal pull-up. Hold it to record a voice note; a tap starts a live call.

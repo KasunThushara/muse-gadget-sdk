@@ -154,7 +154,8 @@ esp_err_t xvf3800_led_brightness(uint8_t brightness) {
 }
 
 esp_err_t xvf3800_led_colour(uint8_t r, uint8_t g, uint8_t b) {
-    uint8_t rgb[4] = {r, g, b, 0};
+    // LED_COLOR is a uint32 0x00RRGGBB, little-endian on the wire.
+    uint8_t rgb[4] = {b, g, r, 0};
     return xvf3800_write(XVF3800_RES_GPO, 16, rgb, sizeof(rgb));
 }
 
@@ -162,9 +163,10 @@ esp_err_t xvf3800_led_ring(const uint8_t *rgb, size_t leds) {
     if (!rgb || leds > XVF3800_LED_COUNT) return ESP_ERR_INVALID_ARG;
     uint8_t buf[XVF3800_LED_COUNT * 4];
     for (size_t i = 0; i < leds; i++) {
-        buf[4 * i] = rgb[3 * i];
+        // One uint32 0x00RRGGBB per LED, little-endian: B, G, R, 0.
+        buf[4 * i] = rgb[3 * i + 2];
         buf[4 * i + 1] = rgb[3 * i + 1];
-        buf[4 * i + 2] = rgb[3 * i + 2];
+        buf[4 * i + 2] = rgb[3 * i];
         buf[4 * i + 3] = 0;
     }
     return xvf3800_write(XVF3800_RES_GPO, 19, buf, leds * 4);
