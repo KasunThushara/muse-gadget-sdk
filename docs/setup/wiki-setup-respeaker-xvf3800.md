@@ -3,9 +3,10 @@
 A complete setup guide: keys, phone app, prerequisites, XMOS I2S firmware,
 hardware preparation, build, flash, and pairing.
 
-> Built for this workspace's `seeed-respeaker-xvf3800` port. The port is **not
-> upstream** in `facebookincubator/muse-gadget-sdk` (nor in the Seeed fork), so
-> see [Clone the project](#4-clone-the-project) for the files it adds.
+> This guide targets
+> <https://github.com/KasunThushara/Muse-Gadget-on-reSpeaker-XVF3800>, which
+> contains the `seeed-respeaker-xvf3800` port. That port is **not upstream** in
+> `facebookincubator/muse-gadget-sdk`; clone the fork below.
 
 ---
 
@@ -124,16 +125,18 @@ The phone app has **no TTS provider setting**; TTS is entirely firmware-side.
 
 ## 4. Clone the project
 
+Clone the maintained fork. It is based on the upstream SDK and already contains
+the XVF3800 port and the TTS integration:
+
 ```sh
-git clone https://github.com/facebookincubator/muse-gadget-sdk.git
-cd muse-gadget-sdk
+git clone https://github.com/KasunThushara/Muse-Gadget-on-reSpeaker-XVF3800.git
+cd Muse-Gadget-on-reSpeaker-XVF3800
 ```
 
-> **The XVF3800 port is local to this workspace, not upstream.** A fresh clone
-> does not contain it. Copy/apply these files and changes, or commit the port to
-> your own branch/fork and clone that.
+> If you use `facebookincubator/muse-gadget-sdk` instead, you must apply the
+> additions below yourself.
 
-Files added:
+For reference, the fork adds:
 
 ```
 esp32/devices/sdkconfig.seeed-respeaker-xvf3800
@@ -442,7 +445,10 @@ link.xvf3800: amp on: X0D30=0 X0D31=0 X0D33=1
 
 ## 13. References
 
-- Muse Gadget SDK: <https://github.com/facebookincubator/muse-gadget-sdk>
+- This project (fork with the XVF3800 port):
+  <https://github.com/KasunThushara/Muse-Gadget-on-reSpeaker-XVF3800>
+- Muse Gadget SDK (upstream):
+  <https://github.com/facebookincubator/muse-gadget-sdk>
 - Seeed reSpeaker XVF3800 + XIAO:
   <https://wiki.seeedstudio.com/respeaker_xvf3800_xiao_getting_started/>
 - XMOS firmware update:
